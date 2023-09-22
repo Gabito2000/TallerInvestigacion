@@ -14,7 +14,8 @@ import numpy as np
 import sympy as sp
 import itertools
 import time
-
+import json
+import os
 # Path: index.py
 # Defining functions
 TutteOrder = {}
@@ -40,13 +41,13 @@ def get_graphs(n, m):
         if nx.is_connected(G):
             graphs.append(G)
     
-    #print the graphs as matrices
+    # # print the graphs as matrices
     # for i in range(len(graphs)):
     #     print(nx.adjacency_matrix(graphs[i]).todense())
-        #show the graphs
-        # nx.draw(graphs[i], with_labels=True)
-        # plt.show()
-        # plt.clf()
+    #     # show the graphs
+    #     nx.draw(graphs[i], with_labels=True)
+    #     plt.show()
+    #     plt.clf()
 
 
 
@@ -55,39 +56,9 @@ def get_graphs(n, m):
 def tutte_polynomial(graphs):
     tutte_polynomials = []
     for i in range(len(graphs)):
-        tutte_polynomials.append([graphs, nx.tutte_polynomial(graphs[i])])
+        tutte_polynomials.append([graphs, nx.tutte_polynomial(graphs[i]).expand()])
     return tutte_polynomials
 
-# def resolve_h_is_greater_than_g(G, H):
-#     G_dict = G.as_coefficients_dict() 
-#     H_dict = H.as_coefficients_dict()
-
-#     for g_key, g_value in G_dict.items():
-#         if g_key in H_dict:
-#             h_value = H_dict[g_key]
-#             if(g_value > h_value):
-#                 return 0
-#             # Remove the common term from H
-#             del H_dict[g_key]
-#         elif g_value > 0:
-#             # If the term is only in G and negative, return 0
-#             return 0
-
-#     # Check if all remaining terms in H are non-positive
-#     for h_value in H_dict.values():
-#         if h_value < 0:
-#             return 0
-    
-#     return 1
-
-# def is_h_greater_than_g(G, H):
-#     if TutteOrder.get((G, H)) is not None:
-#         return TutteOrder.get((G, H))
-    
-#     ret = resolve_h_is_greater_than_g(G, H)
-#     print("G: " + str(G), " H: " + str(H), " Result: " + str(ret))
-#     TutteOrder[(G, H)] = ret
-#     return ret
 
 def is_h_greater_than_g(G, H):
     if TutteOrder.get((G, H)) is not None:
@@ -106,9 +77,9 @@ def is_h_greater_than_g(G, H):
 def generate_diagrama_de_hasse(n,m):
     print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
     graphs = get_graphs(n, m)
-
+    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m))
     tutte_polynomials = tutte_polynomial(graphs)
-
+    print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
     
 
     # create a map of tutte polynomials to their graphs
@@ -134,7 +105,6 @@ def generate_diagrama_de_hasse(n,m):
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     # crete a folder
-    import os
     if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
         os.makedirs('resultados/'+str(n) + '_' + str(m))
     np.save('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m), tutte_polynomial_map)
@@ -143,12 +113,21 @@ def generate_diagrama_de_hasse(n,m):
     nx.draw(directed_graph, with_labels=True)
     plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m) + '.png')
     plt.clf()
+    plt.close()
+    # save it all as a string
+    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(tutte_polynomial_map))
+    with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(directed_graph))
+    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(tutte_polynomials))
+    # save it all as a json
 
 
 
 def main():
-    for i in range(5, 7):
-        for j in range(i, i+3):
+    for i in range(5, 8):
+        for j in range(i, i+4):
             generate_diagrama_de_hasse(i, j)
 
 
