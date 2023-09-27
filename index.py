@@ -13,45 +13,60 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 import itertools
-import time
-import json
+import numpy as np
 import os
 # Path: index.py
 # Defining functions
 TutteOrder = {}
 
-
+def matrix_to_string(matrix):
+    return "".join(np.concatenate(matrix).astype(str))
+        
 def get_graphs(n, m):
-    # Create a list of all possible edges using itertools.combinations
+    graphs_output = []
+
     all_possible_edges = list(itertools.combinations(range(n), 2))
     
-    # Generate all possible combinations of m edges
     edge_combinations = list(itertools.combinations(all_possible_edges, m))
-    
-    # Initialize an empty list to store the graphs
-    graphs = []
-    
-    # Iterate through each combination of edges
+
+    graphLookOutTable = dict()
+
     for edges in edge_combinations:
         G = nx.Graph()
         G.add_nodes_from(range(n))
         G.add_edges_from(edges)
-        
-        # Check if the graph is connected (optional)
-        if nx.is_connected(G):
-            graphs.append(G)
-    
-    # # print the graphs as matrices
-    # for i in range(len(graphs)):
-    #     print(nx.adjacency_matrix(graphs[i]).todense())
-    #     # show the graphs
-    #     nx.draw(graphs[i], with_labels=True)
-    #     plt.show()
-    #     plt.clf()
+        if not nx.is_connected(G):
+            continue
+        #transform the graph into a matrix
+        matrix = nx.adjacency_matrix(G).todense()
+        if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
+            continue
+        graphs_output.append(G)
+
+        #generate all possible permutations of the matrix
+        index = list(itertools.permutations(range(n)))
+        for i in range(len(index)):
+            matrix = nx.adjacency_matrix(G, nodelist=index[i]).todense()
+            if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
+                continue
+            graphLookOutTable[matrix_to_string(matrix)] = G
+            
+
+    #plot the graphs
+    for i in range(len(graphs_output)):
+        if not os.path.exists("resultados/"+str(n) + '_' + str(m)):
+            os.makedirs("resultados/"+str(n) + '_' + str(m))
+        if not os.path.exists("resultados/"+str(n) + '_' + str(m)+"/graph"):
+            os.makedirs("resultados/"+str(n) + '_' + str(m)+"/graph")
+
+        nx.draw(graphs_output[i], with_labels=True)
+        plt.savefig("resultados/"+str(n) + '_' + str(m) + "/graph/graph_" + str(i) + ".png")
+        plt.clf()
 
 
 
-    return graphs
+    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs_output))
+    return graphs_output
 
 def tutte_polynomial(graphs):
     tutte_polynomials = []
@@ -116,7 +131,8 @@ def generate_diagrama_de_hasse(n,m):
     plt.close()
     # save it all as a string
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
-        fp.write(str(tutte_polynomial_map))
+        for key, value in tutte_polynomial_map.items():
+            fp.write(str(key) + ' : ' + str(value) + '\n')
     with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(directed_graph))
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
@@ -126,9 +142,7 @@ def generate_diagrama_de_hasse(n,m):
 
 
 def main():
-    for i in range(5, 8):
-        for j in range(i, i+4):
-            generate_diagrama_de_hasse(i, j)
+    generate_diagrama_de_hasse(6, 8)
 
 
 main()
