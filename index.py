@@ -15,23 +15,51 @@ import sympy as sp
 import itertools
 import numpy as np
 import os
+import time
 # Path: index.py
 # Defining functions
 TutteOrder = {}
+
+def load_graphs(n, m):
+    graphs = []
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
+        return graphs
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph'):
+        return graphs
+    for i in range(len(os.listdir('resultados/'+str(n) + '_' + str(m)+'/graph'))):
+        graphs.append(nx.read_gexf('resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf'))
+    return graphs
+
+def save_graphs(graphs, n, m):
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
+        os.makedirs('resultados/'+str(n) + '_' + str(m))
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph'):
+        os.makedirs('resultados/'+str(n) + '_' + str(m)+'/graph')
+    
+    for i in range(len(graphs)):
+        nx.write_gexf(graphs[i], 'resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf')
+
 
 def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
         
 def get_graphs(n, m):
-    graphs_output = []
-
+    graphs_output = load_graphs(n, m)
+    if len(graphs_output) > 0:
+        return graphs_output
+    
+    timer = time.time()
     all_possible_edges = list(itertools.combinations(range(n), 2))
     
     edge_combinations = list(itertools.combinations(all_possible_edges, m))
 
     graphLookOutTable = dict()
 
+    print_c = 0
     for edges in edge_combinations:
+        if print_c % 1000 == 0:
+            print (print_c, "of", len(edge_combinations), str(100*print_c/len(edge_combinations))+"%", " time:" +str(time.time() - timer))
+        print_c = print_c + 1
         G = nx.Graph()
         G.add_nodes_from(range(n))
         G.add_edges_from(edges)
@@ -56,16 +84,19 @@ def get_graphs(n, m):
     for i in range(len(graphs_output)):
         if not os.path.exists("resultados/"+str(n) + '_' + str(m)):
             os.makedirs("resultados/"+str(n) + '_' + str(m))
-        if not os.path.exists("resultados/"+str(n) + '_' + str(m)+"/graph"):
-            os.makedirs("resultados/"+str(n) + '_' + str(m)+"/graph")
+        if not os.path.exists("resultados/"+str(n) + '_' + str(m)+"/graph_image"):
+            os.makedirs("resultados/"+str(n) + '_' + str(m)+"/graph_image")
 
         nx.draw(graphs_output[i], with_labels=True)
-        plt.savefig("resultados/"+str(n) + '_' + str(m) + "/graph/graph_" + str(i) + ".png")
+        plt.savefig("resultados/"+str(n) + '_' + str(m) + "/graph_image/graph_" + str(i) + ".png")
         plt.clf()
 
 
 
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs_output))
+
+    save_graphs(graphs_output, n, m)
+
     return graphs_output
 
 def tutte_polynomial(graphs):
@@ -137,12 +168,13 @@ def generate_diagrama_de_hasse(n,m):
         fp.write(str(directed_graph))
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
-    # save it all as a json
 
 
 
 def main():
-    generate_diagrama_de_hasse(6, 8)
-
-
+    generate_diagrama_de_hasse(5, 6)
+    generate_diagrama_de_hasse(6, 7)
+    generate_diagrama_de_hasse(7, 8)
+    generate_diagrama_de_hasse(8, 9)
+    generate_diagrama_de_hasse(9, 10)
 main()
