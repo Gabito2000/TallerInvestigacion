@@ -1,1 +1,0 @@
-DiGraph with 4 nodes and 0 edges

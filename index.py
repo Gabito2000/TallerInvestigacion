@@ -20,6 +20,14 @@ import time
 # Defining functions
 TutteOrder = {}
 
+def get_maximal_node_in_graph(graph):
+    #for each node if do nt have out edges then it is maximal
+    for node in graph.nodes:
+        if len(graph.edges(node)) == 0:
+            return node
+    
+    return "No maximal node found"
+
 def load_graphs(n, m):
     graphs = []
     if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
@@ -111,7 +119,7 @@ def is_h_greater_than_g(G, H):
         return TutteOrder.get((G, H))
 
     R = (H - G)/ (sp.symbols('x') + sp.symbols('y') - sp.symbols('x') * sp.symbols('y'))
-    R = R.expand()
+    R = sp.simplify(R)
     R_dict = R.as_coefficients_dict()
     for r_key, r_value in R_dict.items():
         if r_value < 0:
@@ -149,32 +157,39 @@ def generate_diagrama_de_hasse(n,m):
     print(directed_graph.nodes)         
     print(directed_graph.edges)
 
+    # check if the graph has a maximum
+    max_node= get_maximal_node_in_graph(directed_graph)
+    print("the max node is:",max_node)
+
+    # save the maximum node
+    with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(max_node))
+
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     # crete a folder
     if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
         os.makedirs('resultados/'+str(n) + '_' + str(m))
-    np.save('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m), tutte_polynomial_map)
-    np.save('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m), directed_graph)
-    np.save('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m), tutte_polynomials)
-    nx.draw(directed_graph, with_labels=True)
-    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m) + '.png')
+    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
     # save it all as a string
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         for key, value in tutte_polynomial_map.items():
-            fp.write(str(key) + ' : ' + str(value) + '\n')
-    with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
-        fp.write(str(directed_graph))
+            fp.write(str(key) + ' : ')
+            for i in range(len(value)):
+                for j in range(len(value[i])):
+                    fp.write(str(value[i][j].edges))
+                    fp.write(' ')
+            fp.write('\n')
+    with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(directed_graph.edges))
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
 
 
 
 def main():
-    generate_diagrama_de_hasse(5, 6)
-    generate_diagrama_de_hasse(6, 7)
-    generate_diagrama_de_hasse(7, 8)
-    generate_diagrama_de_hasse(8, 9)
-    generate_diagrama_de_hasse(9, 10)
+    for n in range(5, 10):
+        for m in range(n, 2*n):
+            generate_diagrama_de_hasse(n,m)
 main()
