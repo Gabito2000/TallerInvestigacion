@@ -26,7 +26,7 @@ def get_maximal_node_in_graph(graph):
         if len(graph.edges(node)) == 0:
             return node
     
-    return "No maximal node found"
+    return -1
 
 def load_graphs(n, m):
     graphs = []
@@ -65,7 +65,7 @@ def get_graphs(n, m):
 
     print_c = 0
     for edges in edge_combinations:
-        if print_c % 1000 == 0:
+        if print_c % 10000 == 0:
             print (print_c, "of", len(edge_combinations), str(100*print_c/len(edge_combinations))+"%", " time:" +str(time.time() - timer))
         print_c = print_c + 1
         G = nx.Graph()
@@ -159,6 +159,10 @@ def generate_diagrama_de_hasse(n,m):
 
     # check if the graph has a maximum
     max_node= get_maximal_node_in_graph(directed_graph)
+    if max_node != -1:
+        max_node = tutte_polynomials[max_node]
+    else:
+        max_node = "NO MAXIMUM NODE EXISTS"
     print("the max node is:",max_node)
 
     # save the maximum node
