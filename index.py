@@ -18,6 +18,9 @@ import time
 import sys
 
 TutteOrder = {}
+def convert_to_file_name(file_name):
+    return file_name.replace(' ', '').replace('**', '^').replace('*', '')
+
 def create_required_directories(n, m):
     if not os.path.exists('resultados'):
         os.makedirs('resultados')
@@ -85,13 +88,6 @@ def get_graphs(n, m):
             if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
                 continue
             graphLookOutTable[matrix_to_string(matrix)] = G
-            
-
-    #plot the graphs
-    for i in range(len(graphs_output)):
-        nx.draw(graphs_output[i], with_labels=True)
-        plt.savefig("resultados/"+str(n) + '_' + str(m) + "/graph_image/graph_" + str(i) + ".png")
-        plt.clf()
 
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs_output))
 
@@ -102,7 +98,7 @@ def get_graphs(n, m):
 def tutte_polynomial(graphs):
     tutte_polynomials = []
     for i in range(len(graphs)):
-        tutte_polynomials.append([graphs, nx.tutte_polynomial(graphs[i]).expand()])
+        tutte_polynomials.append([graphs[i], nx.tutte_polynomial(graphs[i]).expand()])
     return tutte_polynomials
 
 def is_h_greater_than_g(G, H):
@@ -158,39 +154,37 @@ def generate_diagrama_de_hasse(n,m):
         max_node = tutte_polynomials[max_node]
     else:
         max_node = "NO MAXIMUM NODE EXISTS"
-    print("the max node is:",max_node)
+    print("the max node is:",max_node, convert_to_file_name(str(max_node)))
 
     # save the maximum node
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
-        fp.write(str(max_node))
+        fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
-    # crete a folder
     nx.draw(directed_graph, with_labels=True)
     plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
+
+    # save the graph asociated with the tutte polynomial
+    for key, value in tutte_polynomial_map.items():
+        for i in range(len(value)):
+            nx.draw(value[i], with_labels=True)
+            plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + convert_to_file_name(str(key))+ '_' + str(i) + '.png')
+            plt.clf()
+            plt.close()
+    
     # save it all as a string
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         for key, value in tutte_polynomial_map.items():
             fp.write(str(key) + ' : ')
             for i in range(len(value)):
-                for j in range(len(value[i])):
-                    fp.write(str(value[i][j].edges))
-                    fp.write(' ')
+                fp.write(str(value[i].edges))
             fp.write('\n')
     with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(directed_graph.edges))
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
-
-
-
-# get the inputs from the user command  pithon index.py n m
-
-
-
-
 
 def main():
     array_entada = []
