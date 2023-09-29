@@ -13,12 +13,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 import itertools
-import numpy as np
 import os
 import time
-# Path: index.py
-# Defining functions
+
 TutteOrder = {}
+def create_required_directories():
+    if not os.path.exists('resultados'):
+        os.makedirs('resultados')
+    if not os.path.exists('resultados/graph'):
+        os.makedirs('resultados/graph')
+    if not os.path.exists('resultados/graph_image'):
+        os.makedirs('resultados/graph_image')
 
 def get_maximal_node_in_graph(graph):
     #for each node if do nt have out edges then it is maximal
@@ -30,23 +35,13 @@ def get_maximal_node_in_graph(graph):
 
 def load_graphs(n, m):
     graphs = []
-    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
-        return graphs
-    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph'):
-        return graphs
     for i in range(len(os.listdir('resultados/'+str(n) + '_' + str(m)+'/graph'))):
         graphs.append(nx.read_gexf('resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf'))
     return graphs
 
 def save_graphs(graphs, n, m):
-    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
-        os.makedirs('resultados/'+str(n) + '_' + str(m))
-    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph'):
-        os.makedirs('resultados/'+str(n) + '_' + str(m)+'/graph')
-    
     for i in range(len(graphs)):
         nx.write_gexf(graphs[i], 'resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf')
-
 
 def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
@@ -90,16 +85,9 @@ def get_graphs(n, m):
 
     #plot the graphs
     for i in range(len(graphs_output)):
-        if not os.path.exists("resultados/"+str(n) + '_' + str(m)):
-            os.makedirs("resultados/"+str(n) + '_' + str(m))
-        if not os.path.exists("resultados/"+str(n) + '_' + str(m)+"/graph_image"):
-            os.makedirs("resultados/"+str(n) + '_' + str(m)+"/graph_image")
-
         nx.draw(graphs_output[i], with_labels=True)
         plt.savefig("resultados/"+str(n) + '_' + str(m) + "/graph_image/graph_" + str(i) + ".png")
         plt.clf()
-
-
 
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs_output))
 
@@ -112,7 +100,6 @@ def tutte_polynomial(graphs):
     for i in range(len(graphs)):
         tutte_polynomials.append([graphs, nx.tutte_polynomial(graphs[i]).expand()])
     return tutte_polynomials
-
 
 def is_h_greater_than_g(G, H):
     if TutteOrder.get((G, H)) is not None:
@@ -157,6 +144,10 @@ def generate_diagrama_de_hasse(n,m):
     print(directed_graph.nodes)         
     print(directed_graph.edges)
 
+    #asin the tutte_polynomials to the nodes
+    for i in range(len(tutte_polynomials)):
+        directed_graph.nodes[i]['tutte_polynomial'] = tutte_polynomials[i]
+
     # check if the graph has a maximum
     max_node= get_maximal_node_in_graph(directed_graph)
     if max_node != -1:
@@ -171,8 +162,7 @@ def generate_diagrama_de_hasse(n,m):
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     # crete a folder
-    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
-        os.makedirs('resultados/'+str(n) + '_' + str(m))
+    nx.draw(directed_graph, with_labels=True)
     plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
@@ -190,10 +180,35 @@ def generate_diagrama_de_hasse(n,m):
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
 
+create_required_directories()
+
+# get the inputs from the user command  pithon index.py n m
+import sys
+
+
 
 
 def main():
-    for n in range(5, 10):
-        for m in range(n, 2*n):
-            generate_diagrama_de_hasse(n,m)
+    array_entada = []
+    if len(sys.argv) < 3:
+        print("Usage: python index.py n m for more especific execution")
+        for i in range(5, 8):
+            for j in range(i, i+5):
+                array_entada.append([i, j])
+    else:
+        if len(sys.argv) % 2 != 1:
+            print("error, odd number of enties read the readme file for more information")
+            exit()
+        for i in range(1, len(sys.argv), 2):
+            if int(sys.argv[i]) < 0 or int(sys.argv[i+1]) < 0:
+                print("read the readme file for more information")
+                exit()
+            array_entada.append([int(sys.argv[i]), int(sys.argv[i+1])])
+
+    for i in range(len(array_entada)):
+        generate_diagrama_de_hasse(array_entada[i][0], array_entada[i][1])
+
+    create_required_directories()
+    generate_diagrama_de_hasse(5,5)
+
 main()
