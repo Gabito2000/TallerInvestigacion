@@ -15,15 +15,19 @@ import sympy as sp
 import itertools
 import os
 import time
+import sys
 
 TutteOrder = {}
-def create_required_directories():
+def create_required_directories(n, m):
     if not os.path.exists('resultados'):
         os.makedirs('resultados')
-    if not os.path.exists('resultados/graph'):
-        os.makedirs('resultados/graph')
-    if not os.path.exists('resultados/graph_image'):
-        os.makedirs('resultados/graph_image')
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)):
+        os.makedirs('resultados/'+str(n) + '_' + str(m))
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph'):
+        os.makedirs('resultados/'+str(n) + '_' + str(m)+'/graph')
+    if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph_image'):
+        os.makedirs('resultados/'+str(n) + '_' + str(m)+'/graph_image')
+
 
 def get_maximal_node_in_graph(graph):
     #for each node if do nt have out edges then it is maximal
@@ -180,10 +184,10 @@ def generate_diagrama_de_hasse(n,m):
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
 
-create_required_directories()
+
 
 # get the inputs from the user command  pithon index.py n m
-import sys
+
 
 
 
@@ -206,9 +210,9 @@ def main():
             array_entada.append([int(sys.argv[i]), int(sys.argv[i+1])])
 
     for i in range(len(array_entada)):
+        create_required_directories(array_entada[i][0], array_entada[i][1])
         generate_diagrama_de_hasse(array_entada[i][0], array_entada[i][1])
 
-    create_required_directories()
-    generate_diagrama_de_hasse(5,5)
+   
 
 main()
