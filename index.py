@@ -89,15 +89,16 @@ def get_graphs(n, m):
                 continue
             graphLookOutTable[matrix_to_string(matrix)] = G
 
-    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs_output))
-
     save_graphs(graphs_output, n, m)
 
     return graphs_output
 
 def tutte_polynomial(graphs):
+    timer = time.time()
     tutte_polynomials = []
     for i in range(len(graphs)):
+        if i % 10 == 0:
+            print (i, "of", len(graphs), str(100*i/len(graphs))+"%", " time:" +str(time.time() - timer))
         tutte_polynomials.append([graphs[i], nx.tutte_polynomial(graphs[i]).expand()])
     return tutte_polynomials
 
@@ -116,9 +117,10 @@ def is_h_greater_than_g(G, H):
     return 1
 
 def generate_diagrama_de_hasse(n,m):
+    timer = time.time()
     print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
     graphs = get_graphs(n, m)
-    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m))
+    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     tutte_polynomials = tutte_polynomial(graphs)
     print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
     
@@ -185,6 +187,8 @@ def generate_diagrama_de_hasse(n,m):
         fp.write(str(directed_graph.edges))
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
+
+    print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
 
 def main():
     array_entada = []
