@@ -8,6 +8,7 @@ import time
 import sys
 
 TutteOrder = {}
+
 def convert_to_file_name(file_name):
     return file_name.replace(' ', '').replace('**', '^').replace('*', '')
 
@@ -21,13 +22,11 @@ def create_required_directories(n, m):
     if not os.path.exists('resultados/'+str(n) + '_' + str(m)+'/graph_image'):
         os.makedirs('resultados/'+str(n) + '_' + str(m)+'/graph_image')
 
-
 def get_maximal_node_in_graph(graph):
-    #for each node if do nt have out edges then it is maximal
+    # for each node if do not have out edges then it is maximal
     for node in graph.nodes:
         if len(graph.edges(node)) == 0:
             return node
-    
     return -1
 
 def load_graphs(n, m):
@@ -42,15 +41,15 @@ def save_graphs(graphs, n, m):
 
 def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
-        
+
 def get_graphs(n, m):
     graphs_output = load_graphs(n, m)
     if len(graphs_output) > 0:
         return graphs_output
-    
+
     timer = time.time()
     all_possible_edges = list(itertools.combinations(range(n), 2))
-    
+
     edge_combinations = list(itertools.combinations(all_possible_edges, m))
 
     graphLookOutTable = dict()
@@ -65,13 +64,13 @@ def get_graphs(n, m):
         G.add_edges_from(edges)
         if not nx.is_connected(G):
             continue
-        #transform the graph into a matrix
+        # transform the graph into a matrix
         matrix = nx.adjacency_matrix(G).todense()
         if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
             continue
         graphs_output.append(G)
 
-        #generate all possible permutations of the matrix
+        # generate all possible permutations of the matrix
         index = list(itertools.permutations(range(n)))
         for i in range(len(index)):
             matrix = nx.adjacency_matrix(G, nodelist=index[i]).todense()
@@ -102,18 +101,17 @@ def is_h_greater_than_g(G, H):
     for r_key, r_value in R_dict.items():
         if r_value < 0:
             return 0
-        
+
     TutteOrder[(G, H)] = 1
     return 1
 
-def generate_diagrama_de_hasse(n,m):
+def generate_diagrama_de_hasse(n, m):
     timer = time.time()
     print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
     graphs = get_graphs(n, m)
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     tutte_polynomials = tutte_polynomial(graphs)
     print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
-    
 
     # create a map of tutte polynomials to their graphs
     tutte_polynomial_map = {}
@@ -133,10 +131,10 @@ def generate_diagrama_de_hasse(n,m):
                 if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
                     directed_graph.add_edge(i, j)
 
-    print(directed_graph.nodes)         
+    print(directed_graph.nodes)
     print(directed_graph.edges)
 
-    #asin the tutte_polynomials to the nodes
+    # asin the tutte_polynomials to the nodes
     for i in range(len(tutte_polynomials)):
         directed_graph.nodes[i]['tutte_polynomial'] = tutte_polynomials[i]
 
@@ -165,7 +163,7 @@ def generate_diagrama_de_hasse(n,m):
             plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + convert_to_file_name(str(key))+ '_' + str(i) + '.png')
             plt.clf()
             plt.close()
-    
+
     # save it all as a string
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         for key, value in tutte_polynomial_map.items():
@@ -183,13 +181,13 @@ def generate_diagrama_de_hasse(n,m):
 def main():
     array_entada = []
     if len(sys.argv) < 3:
-        print("Usage: python index.py n m for more especific execution")
+        print("Usage: python index.py n m for more specific execution")
         for i in range(5, 8):
             for j in range(i, i+5):
                 array_entada.append([i, j])
     else:
         if len(sys.argv) % 2 != 1:
-            print("error, odd number of enties read the readme file for more information")
+            print("error, odd number of entries read the readme file for more information")
             exit()
         for i in range(1, len(sys.argv), 2):
             if int(sys.argv[i]) < 0 or int(sys.argv[i+1]) < 0:
@@ -200,7 +198,5 @@ def main():
     for i in range(len(array_entada)):
         create_required_directories(array_entada[i][0], array_entada[i][1])
         generate_diagrama_de_hasse(array_entada[i][0], array_entada[i][1])
-
-   
 
 main()

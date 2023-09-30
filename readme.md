@@ -31,3 +31,11 @@ tutte_polynomials_$n$_$m$: todos los polinomios de tutte encontrados.
 **ejemplo: python index.py 5 5 6 6 7 7** ejecutará el programa para 5 vértices y 5 aristas, 6 vértices y 6 aristas, 7 vértices y 7 aristas.
 
 recordar que el programa puede tardar tiempo en ejecutar, ya que es computacionalmente intensivo y no está optimizado.
+
+
+## cómo compilar a cython 
+
+**python setup.py build_ext --inplace**
+
+**python main.py**
+
