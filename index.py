@@ -2,7 +2,6 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
-import itertools
 import os
 import time
 import sys
@@ -24,64 +23,32 @@ def create_required_directories(n, m):
 
 def get_maximal_node_in_graph(graph):
     #for each node if do nt have out edges then it is maximal
+    return_node = -1
     for node in graph.nodes:
         if len(graph.edges(node)) == 0:
-            return node
+            if return_node == -1:
+                return_node = node
+            else:
+                return -1
     
-    return -1
-
-def load_graphs(n, m):
-    graphs = []
-    for i in range(len(os.listdir('resultados/'+str(n) + '_' + str(m)+'/graph'))):
-        graphs.append(nx.read_gexf('resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf'))
-    return graphs
-
-def save_graphs(graphs, n, m):
-    for i in range(len(graphs)):
-        nx.write_gexf(graphs[i], 'resultados/'+str(n) + '_' + str(m)+'/graph/graph_' + str(i) + '.gexf')
+    return return_node
 
 def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
         
 def get_graphs(n, m):
-    graphs_output = load_graphs(n, m)
-    if len(graphs_output) > 0:
-        return graphs_output
-    
-    timer = time.time()
-    all_possible_edges = list(itertools.combinations(range(n), 2))
-    
-    edge_combinations = list(itertools.combinations(all_possible_edges, m))
+    graphs = []
+    if n <= 7 :
+        atlas = nx.graph_atlas_g()
+        
+        for i in range(len(atlas)):
+            if len(atlas[i].edges) == m and len(atlas[i].nodes) == n:
+                graphs.append(atlas[i])
 
-    graphLookOutTable = dict()
+    # remove all graphs that are not connected
+    graphs = [graph for graph in graphs if nx.is_connected(graph)]
 
-    print_c = 0
-    for edges in edge_combinations:
-        if print_c % 10000 == 0:
-            print (print_c, "of", len(edge_combinations), str(100*print_c/len(edge_combinations))+"%", " time:" +str(time.time() - timer))
-        print_c = print_c + 1
-        G = nx.Graph()
-        G.add_nodes_from(range(n))
-        G.add_edges_from(edges)
-        if not nx.is_connected(G):
-            continue
-        #transform the graph into a matrix
-        matrix = nx.adjacency_matrix(G).todense()
-        if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
-            continue
-        graphs_output.append(G)
-
-        #generate all possible permutations of the matrix
-        index = list(itertools.permutations(range(n)))
-        for i in range(len(index)):
-            matrix = nx.adjacency_matrix(G, nodelist=index[i]).todense()
-            if graphLookOutTable.get(matrix_to_string(matrix)) is not None:
-                continue
-            graphLookOutTable[matrix_to_string(matrix)] = G
-
-    save_graphs(graphs_output, n, m)
-
-    return graphs_output
+    return graphs
 
 def tutte_polynomial(graphs):
     timer = time.time()
@@ -116,6 +83,7 @@ def generate_diagrama_de_hasse(n,m):
     
 
     # create a map of tutte polynomials to their graphs
+    print("creating a map of tutte polynomials to their graphs")
     tutte_polynomial_map = {}
     for i in range(len(tutte_polynomials)):
         if tutte_polynomial_map.get(tutte_polynomials[i][1]) is None:
@@ -127,9 +95,9 @@ def generate_diagrama_de_hasse(n,m):
     directed_graph = nx.DiGraph()
     directed_graph.add_nodes_from(range(len(tutte_polynomials)))
 
+    print("creating the directed graph")
     for i in range(len(tutte_polynomials)):
         for j in range(len(tutte_polynomials)):
-            if i != j:
                 if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
                     directed_graph.add_edge(i, j)
 
@@ -159,6 +127,7 @@ def generate_diagrama_de_hasse(n,m):
     plt.close()
 
     # save the graph asociated with the tutte polynomial
+    print("saving the graph asociated with the tutte polynomial")
     for key, value in tutte_polynomial_map.items():
         for i in range(len(value)):
             nx.draw(value[i], with_labels=True)
@@ -184,8 +153,8 @@ def main():
     array_entada = []
     if len(sys.argv) < 3:
         print("Usage: python index.py n m for more especific execution")
-        for i in range(5, 8):
-            for j in range(i, i+5):
+        for i in range(7, 8):
+            for j in range(11, 12):
                 array_entada.append([i, j])
     else:
         if len(sys.argv) % 2 != 1:
