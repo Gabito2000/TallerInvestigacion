@@ -4,6 +4,7 @@ import numpy as np
 import sympy as sp
 import os
 import time
+
 import sys
 
 TutteOrder = {}
@@ -29,6 +30,7 @@ def get_maximal_node_in_graph(graph):
             if return_node == -1:
                 return_node = node
             else:
+                print("exist more than one that should be maximal")
                 return -1
     
     return return_node
@@ -96,10 +98,16 @@ def generate_diagrama_de_hasse(n,m):
     directed_graph.add_nodes_from(range(len(tutte_polynomials)))
 
     print("creating the directed graph")
+
     for i in range(len(tutte_polynomials)):
-        for j in range(len(tutte_polynomials)):
-                if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
-                    directed_graph.add_edge(i, j)
+        if i % 10 == 0:
+            print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
+        for j in range(i, len(tutte_polynomials)):
+                if i != j :
+                    if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
+                        directed_graph.add_edge(i, j)
+                    elif is_h_greater_than_g(tutte_polynomials[j], tutte_polynomials[i]):
+                        directed_graph.add_edge(j, i)
 
     print(directed_graph.nodes)         
     print(directed_graph.edges)
@@ -119,6 +127,8 @@ def generate_diagrama_de_hasse(n,m):
     # save the maximum node
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
+
+    directed_graph = nx.relabel_nodes(directed_graph, lambda x: convert_to_file_name(str(directed_graph.nodes[x]['tutte_polynomial'])))
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     nx.draw(directed_graph, with_labels=True)
