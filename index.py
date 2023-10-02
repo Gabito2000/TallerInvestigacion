@@ -5,6 +5,7 @@ import sympy as sp
 import os
 import time
 
+
 import sys
 
 TutteOrder = {}
@@ -24,14 +25,10 @@ def create_required_directories(n, m):
 
 def get_maximal_node_in_graph(graph):
     #for each node if do nt have out edges then it is maximal
-    return_node = -1
+    return_node = []
     for node in graph.nodes:
         if len(graph.edges(node)) == 0:
-            if return_node == -1:
-                return_node = node
-            else:
-                print("exist more than one that should be maximal")
-                return -1
+            return_node.append(node)
     
     return return_node
 
@@ -46,6 +43,10 @@ def get_graphs(n, m):
         for i in range(len(atlas)):
             if len(atlas[i].edges) == m and len(atlas[i].nodes) == n:
                 graphs.append(atlas[i])
+
+    else:
+        # use nauty algorithm to generate all graphs  
+        graphs = []
 
     # remove all graphs that are not connected
     graphs = [graph for graph in graphs if nx.is_connected(graph)]
@@ -117,12 +118,16 @@ def generate_diagrama_de_hasse(n,m):
         directed_graph.nodes[i]['tutte_polynomial'] = tutte_polynomials[i]
 
     # check if the graph has a maximum
-    max_node= get_maximal_node_in_graph(directed_graph)
-    if max_node != -1:
-        max_node = tutte_polynomials[max_node]
+    max_node = get_maximal_node_in_graph(directed_graph)
+    if len(max_node) == 1:
+        max_node = tutte_polynomials[max_node[0]]
+        print("the max node is:",max_node, convert_to_file_name(str(max_node)))
+    elif len(max_node) > 1:
+        for i in range(len(max_node)):
+            max_node[i] = tutte_polynomials[max_node[i]]
+        print("NO MAX NODE EXISTS, THE MAXIMUMS ARE:",max_node, convert_to_file_name(str(max_node)))
     else:
-        max_node = "NO MAXIMUM NODE EXISTS"
-    print("the max node is:",max_node, convert_to_file_name(str(max_node)))
+        print("NO MAX NODE EXISTS")
 
     # save the maximum node
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
@@ -132,9 +137,10 @@ def generate_diagrama_de_hasse(n,m):
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     nx.draw(directed_graph, with_labels=True)
-    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
+    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph/' + 'directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
+
 
     # save the graph asociated with the tutte polynomial
     print("saving the graph asociated with the tutte polynomial")
