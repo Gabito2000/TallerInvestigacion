@@ -4,7 +4,8 @@ import numpy as np
 import sympy as sp
 import os
 import time
-
+import pynauty as pnt
+import subprocess
 
 import sys
 
@@ -36,22 +37,47 @@ def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
         
 def get_graphs(n, m):
+    command = 'nauty2_8_6/geng -c ' + str(n) + ' ' + str(m)
     graphs = []
-    if n <= 7 :
-        atlas = nx.graph_atlas_g()
+    try:
+        # Execute the command and wait for it to finish
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
         
-        for i in range(len(atlas)):
-            if len(atlas[i].edges) == m and len(atlas[i].nodes) == n:
-                graphs.append(atlas[i])
-
-    else:
-        # use nauty algorithm to generate all graphs  
-        graphs = []
-
-    # remove all graphs that are not connected
-    graphs = [graph for graph in graphs if nx.is_connected(graph)]
-
+        if process.returncode == 0:
+            # Output is a list of graph6 rows
+            output = stdout.decode('utf-8').split('\n')
+            # Remove the last element of the list
+            output.pop()
+            # Convert the graph6 to a networkx graph
+            for i in range(len(output)):
+                graph = nx.from_graph6_bytes(output[i].encode('utf-8'))
+                graphs.append(graph)
+        else:
+            print("Error: The command returned a non-zero exit code.")
+            print("stderr:", stderr.decode('utf-8'))
+    
+    except Exception as e:
+        print("Error:", e)
+    
     return graphs
+# def get_graphs(n, m):
+#     graphs = []
+#     if n <= 7 :
+#         atlas = nx.graph_atlas_g()
+        
+#         for i in range(len(atlas)):
+#             if len(atlas[i].edges) == m and len(atlas[i].nodes) == n:
+#                 graphs.append(atlas[i])
+
+#     else:
+#         # use nauty algorithm to generate all graphs  
+#         graphs = []
+
+#     # remove all graphs that are not connected
+#     graphs = [graph for graph in graphs if nx.is_connected(graph)]
+
+#     return graphs
 
 def tutte_polynomial(graphs):
     timer = time.time()
@@ -68,6 +94,7 @@ def is_h_greater_than_g(G, H):
 
     R = (H - G)/ (sp.symbols('x') + sp.symbols('y') - sp.symbols('x') * sp.symbols('y'))
     R = sp.simplify(R)
+    R = sp.expand(R)
     R_dict = R.as_coefficients_dict()
     for r_key, r_value in R_dict.items():
         if r_value < 0:
@@ -101,8 +128,7 @@ def generate_diagrama_de_hasse(n,m):
     print("creating the directed graph")
 
     for i in range(len(tutte_polynomials)):
-        if i % 10 == 0:
-            print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
+        print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
         for j in range(i, len(tutte_polynomials)):
                 if i != j :
                     if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
@@ -113,7 +139,7 @@ def generate_diagrama_de_hasse(n,m):
     print(directed_graph.nodes)         
     print(directed_graph.edges)
 
-    #asin the tutte_polynomials to the nodes
+    #asign the tutte_polynomials to the nodes
     for i in range(len(tutte_polynomials)):
         directed_graph.nodes[i]['tutte_polynomial'] = tutte_polynomials[i]
 
@@ -169,9 +195,7 @@ def main():
     array_entada = []
     if len(sys.argv) < 3:
         print("Usage: python index.py n m for more especific execution")
-        for i in range(7, 8):
-            for j in range(11, 12):
-                array_entada.append([i, j])
+        array_entada.append([6,7])
     else:
         if len(sys.argv) % 2 != 1:
             print("error, odd number of enties read the readme file for more information")
@@ -185,7 +209,5 @@ def main():
     for i in range(len(array_entada)):
         create_required_directories(array_entada[i][0], array_entada[i][1])
         generate_diagrama_de_hasse(array_entada[i][0], array_entada[i][1])
-
-   
 
 main()
