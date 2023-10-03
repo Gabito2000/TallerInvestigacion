@@ -4,7 +4,6 @@ import numpy as np
 import sympy as sp
 import os
 import time
-import pynauty as pnt
 import subprocess
 
 import sys
@@ -126,12 +125,15 @@ def tutte_polynomial_map_generate(n, m, tutte_polynomials):
             tutte_polynomial_map[tutte_polynomials[i][1]] = []
         tutte_polynomial_map[tutte_polynomials[i][1]].append(tutte_polynomials[i][0])
     print("saving the graph asociated with the tutte polynomial")
-    for key, value in tutte_polynomial_map.items():
-        for i in range(len(value)):
-            nx.draw(value[i], with_labels=True)
-            plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + convert_to_file_name(str(key))+ '_' + str(i) + '.png')
-            plt.clf()
-            plt.close()
+
+    with open('resultados/'+str(n) + '_' + str(m)+'/graph_image/map_graph_tuttepol ' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        for key, value, c in zip(tutte_polynomial_map.keys(), tutte_polynomial_map.values(), range(len(tutte_polynomial_map))):
+            for i in range(len(value)):
+                fp.write(str(c) + '_' + str(i) + ' : ' + convert_to_file_name(str(key)) + ' : ' + str(value[i].edges)+ '\n')
+                nx.draw(value[i], with_labels=True)
+                plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + str(c)+ '_' + str(i) + '.png')
+                plt.clf()
+                plt.close()
     return tutte_polynomial_map
 
 def get_tutte_polynomials(n, m, graphs):
