@@ -60,26 +60,10 @@ def get_graphs(n, m):
     except Exception as e:
         print("Error:", e)
     
+    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     return graphs
-# def get_graphs(n, m):
-#     graphs = []
-#     if n <= 7 :
-#         atlas = nx.graph_atlas_g()
-        
-#         for i in range(len(atlas)):
-#             if len(atlas[i].edges) == m and len(atlas[i].nodes) == n:
-#                 graphs.append(atlas[i])
 
-#     else:
-#         # use nauty algorithm to generate all graphs  
-#         graphs = []
-
-#     # remove all graphs that are not connected
-#     graphs = [graph for graph in graphs if nx.is_connected(graph)]
-
-#     return graphs
-
-def tutte_polynomial(graphs):
+def tutte_polynomial_algorithm(graphs):
     timer = time.time()
     tutte_polynomials = []
     for i in range(len(graphs)):
@@ -103,30 +87,100 @@ def is_h_greater_than_g(G, H):
     TutteOrder[(G, H)] = 1
     return 1
 
-def generate_diagrama_de_hasse(n,m):
-    timer = time.time()
-    print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
-    graphs = get_graphs(n, m)
-    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
-    tutte_polynomials = tutte_polynomial(graphs)
-    print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
-    
-
-    # create a map of tutte polynomials to their graphs
+def tutte_polynomial_map_generate(n, m, tutte_polynomials):
     print("creating a map of tutte polynomials to their graphs")
     tutte_polynomial_map = {}
     for i in range(len(tutte_polynomials)):
         if tutte_polynomial_map.get(tutte_polynomials[i][1]) is None:
             tutte_polynomial_map[tutte_polynomials[i][1]] = []
         tutte_polynomial_map[tutte_polynomials[i][1]].append(tutte_polynomials[i][0])
+    print("saving the graph asociated with the tutte polynomial")
+    for key, value in tutte_polynomial_map.items():
+        for i in range(len(value)):
+            nx.draw(value[i], with_labels=True)
+            plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + convert_to_file_name(str(key))+ '_' + str(i) + '.png')
+            plt.clf()
+            plt.close()
+    return tutte_polynomial_map
 
+def get_tutte_polynomials(n, m, graphs):
+    tutte_polynomials = tutte_polynomial_algorithm(graphs)
+    print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
+    # create a map of tutte polynomials to their graphs
+    tutte_polynomial_map = tutte_polynomial_map_generate(n, m, tutte_polynomials)
     tutte_polynomials = list(tutte_polynomial_map.keys())
 
+    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(tutte_polynomials))
+    # save the graph asociated with the tutte polynomial
+    
+    # save it all as a string
+    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        for key, value in tutte_polynomial_map.items():
+            fp.write(str(key) + ' : ')
+            for i in range(len(value)):
+                fp.write(str(value[i].edges))
+            fp.write('\n')
+    return tutte_polynomials
+
+def get_max_polinome(tutte_polynomials, n, m, timer):
+    max_node = []
+    for i in range(len(tutte_polynomials)):
+        if i % 10 == 0:
+            print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
+        is_grater = True
+        node_remove = []
+        for j in range(len(max_node)):
+            if is_h_greater_than_g(tutte_polynomials[i], max_node[j]):
+                is_grater = False
+                break
+            if is_h_greater_than_g(max_node[j], tutte_polynomials[i]):
+                node_remove.append(True)
+            else:
+                node_remove.append(False)
+                
+        if is_grater:
+            max_node.append(tutte_polynomials[i])
+
+        for j in range(len(node_remove)):
+            if node_remove[j]:
+                max_node.pop(j)
+                node_remove.pop(j)
+                break
+
+    if len(max_node) == 1:
+        max_node = max_node[0]
+        print("the max node is:",max_node, convert_to_file_name(str(max_node)))
+    elif len(max_node) > 1:
+        print("NO MAX NODE EXISTS, THE MAXIMUMS ARE:",max_node, convert_to_file_name(str(max_node)))
+    else:
+        print("NO MAX NODE EXISTS")
+
+    print("the max node is:",max_node, convert_to_file_name(str(max_node)))
+    with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
+
+    return max_node
+            
+def ejecutar_algoritmo(n,m, getOnlyMax = False):
+    timer = time.time()
+    if getOnlyMax == False:
+        print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
+    else:
+        print ("Generating max node for n = " + str(n) + " and m = " + str(m))
+    graphs = get_graphs(n, m)
+    tutte_polynomials = get_tutte_polynomials(n, m, graphs)
+    if getOnlyMax:
+        get_max_polinome(tutte_polynomials, n, m, timer)
+    else:
+        generate_hasse_diagram(n, m, timer, tutte_polynomials)
+    print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+
+def generate_hasse_diagram(n, m, timer, tutte_polynomials):
     directed_graph = nx.DiGraph()
     directed_graph.add_nodes_from(range(len(tutte_polynomials)))
 
     print("creating the directed graph")
-
     for i in range(len(tutte_polynomials)):
         print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
         for j in range(i, len(tutte_polynomials)):
@@ -155,7 +209,6 @@ def generate_diagrama_de_hasse(n,m):
     else:
         print("NO MAX NODE EXISTS")
 
-    # save the maximum node
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
 
@@ -167,29 +220,10 @@ def generate_diagrama_de_hasse(n,m):
     plt.clf()
     plt.close()
 
-
-    # save the graph asociated with the tutte polynomial
-    print("saving the graph asociated with the tutte polynomial")
-    for key, value in tutte_polynomial_map.items():
-        for i in range(len(value)):
-            nx.draw(value[i], with_labels=True)
-            plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + convert_to_file_name(str(key))+ '_' + str(i) + '.png')
-            plt.clf()
-            plt.close()
-    
-    # save it all as a string
-    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
-        for key, value in tutte_polynomial_map.items():
-            fp.write(str(key) + ' : ')
-            for i in range(len(value)):
-                fp.write(str(value[i].edges))
-            fp.write('\n')
     with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(directed_graph.edges))
-    with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
-        fp.write(str(tutte_polynomials))
 
-    print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+    return directed_graph
 
 def main():
     array_entada = []
@@ -208,6 +242,6 @@ def main():
 
     for i in range(len(array_entada)):
         create_required_directories(array_entada[i][0], array_entada[i][1])
-        generate_diagrama_de_hasse(array_entada[i][0], array_entada[i][1])
+        ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], True)
 
 main()
