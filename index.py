@@ -35,7 +35,38 @@ def get_maximal_node_in_graph(graph):
 
 def matrix_to_string(matrix):
     return "".join(np.concatenate(matrix).astype(str))
+
+def get_graphs_for_max(n, m):
+    '''
+    only bipartite graphs can be maximal
+
+    '''
+    command = 'nauty2_8_6/geng -c ' + str(n) + ' ' + str(m)
+    graphs = []
+    try:
+        # Execute the command and wait for it to finish
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
         
+        if process.returncode == 0:
+            # Output is a list of graph6 rows
+            output = stdout.decode('utf-8').split('\n')
+            # Remove the last element of the list
+            output.pop()
+            # Convert the graph6 to a networkx graph
+            for i in range(len(output)):
+                graph = nx.from_graph6_bytes(output[i].encode('utf-8'))
+                graphs.append(graph)
+        else:
+            print("Error: The command returned a non-zero exit code.")
+            print("stderr:", stderr.decode('utf-8'))
+    
+    except Exception as e:
+        print("Error:", e)
+    
+    print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
+    return graphs
+
 def get_graphs(n, m):
     command = 'nauty2_8_6/geng -c ' + str(n) + ' ' + str(m)
     graphs = []
@@ -156,7 +187,6 @@ def get_max_polinome(tutte_polynomials, n, m, timer):
     else:
         print("NO MAX NODE EXISTS")
 
-    print("the max node is:",max_node, convert_to_file_name(str(max_node)))
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
 
@@ -168,11 +198,14 @@ def ejecutar_algoritmo(n,m, getOnlyMax = False):
         print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
     else:
         print ("Generating max node for n = " + str(n) + " and m = " + str(m))
-    graphs = get_graphs(n, m)
-    tutte_polynomials = get_tutte_polynomials(n, m, graphs)
+    
     if getOnlyMax:
+        graphs = get_graphs_for_max(n, m)
+        tutte_polynomials = get_tutte_polynomials(n, m, graphs)
         get_max_polinome(tutte_polynomials, n, m, timer)
     else:
+        graphs = get_graphs(n, m)
+        tutte_polynomials = get_tutte_polynomials(n, m, graphs)
         generate_hasse_diagram(n, m, timer, tutte_polynomials)
     print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
 
