@@ -5,10 +5,13 @@ import sympy as sp
 import os
 import time
 import subprocess
-
 import sys
+#from tutte import tutte_poly tutte is on tutte_bhkk-master/tutte.py
+from tutte_algorithm.tutte import tutte_poly
 
-TutteOrder = {}
+x, y = sp.symbols('x y')
+
+
 def convert_to_file_name(file_name):
     return file_name.replace(' ', '').replace('**', '^').replace('*', '')
 
@@ -29,7 +32,7 @@ def get_maximal_node_in_graph(graph):
     for node in graph.nodes:
         if len(graph.edges(node)) == 0:
             return_node.append(node)
-    
+
     return return_node
 
 def matrix_to_string(matrix):
@@ -46,7 +49,7 @@ def get_graphs_for_max(n, m):
         # Execute the command and wait for it to finish
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        
+
         if process.returncode == 0:
             # Output is a list of graph6 rows
             output = stdout.decode('utf-8').split('\n')
@@ -59,10 +62,10 @@ def get_graphs_for_max(n, m):
         else:
             print("Error: The command returned a non-zero exit code.")
             print("stderr:", stderr.decode('utf-8'))
-    
+
     except Exception as e:
         print("Error:", e)
-    
+
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     return graphs
 
@@ -73,7 +76,7 @@ def get_graphs(n, m):
         # Execute the command and wait for it to finish
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
-        
+
         if process.returncode == 0:
             # Output is a list of graph6 rows
             output = stdout.decode('utf-8').split('\n')
@@ -86,10 +89,10 @@ def get_graphs(n, m):
         else:
             print("Error: The command returned a non-zero exit code.")
             print("stderr:", stderr.decode('utf-8'))
-    
+
     except Exception as e:
         print("Error:", e)
-    
+
     print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     return graphs
 
@@ -99,22 +102,36 @@ def tutte_polynomial_algorithm(graphs):
     for i in range(len(graphs)):
         if i % 10 == 0:
             print (i, "of", len(graphs), str(100*i/len(graphs))+"%", " time:" +str(time.time() - timer))
-        tutte_polynomials.append([graphs[i], nx.tutte_polynomial(graphs[i]).expand()])
+
+        lol_tuttepoly = tutte_poly(graphs[i])
+        sympy_tuttepoly = sp.Poly(lol_tuttepoly, x, y)
+        tutte_polynomials.append([graphs[i], sympy_tuttepoly])
     return tutte_polynomials
 
-def is_h_greater_than_g(G, H):
-    if TutteOrder.get((G, H)) is not None:
-        return TutteOrder.get((G, H))
+TutteResult = {}
 
-    R = (H - G)/ (sp.symbols('x') + sp.symbols('y') - sp.symbols('x') * sp.symbols('y'))
-    R = sp.simplify(R)
-    R = sp.expand(R)
-    R_dict = R.as_coefficients_dict()
-    for r_key, r_value in R_dict.items():
+def is_h_greater_than_g(H, G):
+    R = 0
+    if  TutteResult.get(str(H) + str(G)) is not None:
+        R = TutteResult[str(H) + str(G)]
+    elif TutteResult.get(str(G) + str(H)) is not None:
+        R = TutteResult[str(G) + str(H)]
+        for r_key, r_value in R.items():
+            if r_value > 0:
+                return 0
+        return 1
+    else:
+        R = (H - G)/ sp.Poly(x+y-(x*y))
+        R = sp.simplify(R)
+        R = sp.expand(R)
+        R = R.as_coefficients_dict()
+        TutteResult[str(H) + str(G)] = R
+
+    for r_key, r_value in R.items():
         if r_value < 0:
             return 0
-        
-    TutteOrder[(G, H)] = 1
+
+
     return 1
 
 def tutte_polynomial_map_generate(n, m, tutte_polynomials):
@@ -146,7 +163,7 @@ def get_tutte_polynomials(n, m, graphs):
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomials_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(tutte_polynomials))
     # save the graph asociated with the tutte polynomial
-    
+
     # save it all as a string
     with open('resultados/'+str(n) + '_' + str(m)+'/tutte_polynomial_map_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         for key, value in tutte_polynomial_map.items():
@@ -158,29 +175,33 @@ def get_tutte_polynomials(n, m, graphs):
 
 def get_max_polinome(tutte_polynomials, n, m, timer):
     max_node = []
-    for i in range(len(tutte_polynomials)):
-        if i % 10 == 0:
-            print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
-        is_grater = True
-        node_remove = []
-        for j in range(len(max_node)):
-            if is_h_greater_than_g(tutte_polynomials[i], max_node[j]):
-                is_grater = False
-                break
-            if is_h_greater_than_g(max_node[j], tutte_polynomials[i]):
-                node_remove.append(True)
-            else:
-                node_remove.append(False)
-                
-        if is_grater:
-            max_node.append(tutte_polynomials[i])
+    
+    #for h in range(len(tutte_polynomials)):}
+    h = 0
+    initial_length = len(tutte_polynomials)
+    while h < len(tutte_polynomials):
+        progres = h + initial_length - len(tutte_polynomials)
+        print (progres, "of", initial_length, str(100*progres/initial_length)+"%", " time:" +str(time.time() - timer))
+        g = 0
+        while g < len(tutte_polynomials):
+            if g != h:
+                if is_h_greater_than_g(tutte_polynomials[g], tutte_polynomials[h]) == 1:
+                    #remove h from the list
+                    tutte_polynomials.pop(h)
+                    h -= 1
+                    break
+                if is_h_greater_than_g(tutte_polynomials[h], tutte_polynomials[g]) == 1:
+                    #remove g from the list
+                    tutte_polynomials.pop(g)
+                    g -= 1
+                    if h > g:
+                        h -= 1
 
-        for j in range(len(node_remove)):
-            if node_remove[j]:
-                max_node.pop(j)
-                node_remove.pop(j)
-                break
+            g += 1
+        h += 1
+        
 
+    max_node = tutte_polynomials
     if len(max_node) == 1:
         max_node = max_node[0]
         print("the max node is:",max_node, convert_to_file_name(str(max_node)))
@@ -193,14 +214,14 @@ def get_max_polinome(tutte_polynomials, n, m, timer):
         fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
 
     return max_node
-            
+
 def ejecutar_algoritmo(n,m, getOnlyMax = False):
     timer = time.time()
     if getOnlyMax == False:
         print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
     else:
         print ("Generating max node for n = " + str(n) + " and m = " + str(m))
-    
+
     if getOnlyMax:
         graphs = get_graphs_for_max(n, m)
         tutte_polynomials = get_tutte_polynomials(n, m, graphs)
@@ -209,7 +230,10 @@ def ejecutar_algoritmo(n,m, getOnlyMax = False):
         graphs = get_graphs(n, m)
         tutte_polynomials = get_tutte_polynomials(n, m, graphs)
         generate_hasse_diagram(n, m, timer, tutte_polynomials)
-    print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+    if getOnlyMax == False:
+        print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+    else:
+        print ("Done generating max node for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
 
 def generate_hasse_diagram(n, m, timer, tutte_polynomials):
     directed_graph = nx.DiGraph()
@@ -220,12 +244,12 @@ def generate_hasse_diagram(n, m, timer, tutte_polynomials):
         print (i, "of", len(tutte_polynomials), str(100*i/len(tutte_polynomials))+"%", " time:" +str(time.time() - timer))
         for j in range(i, len(tutte_polynomials)):
                 if i != j :
-                    if is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]):
+                    if is_h_greater_than_g(tutte_polynomials[j], tutte_polynomials[i]) == 1:
                         directed_graph.add_edge(i, j)
-                    elif is_h_greater_than_g(tutte_polynomials[j], tutte_polynomials[i]):
+                    elif is_h_greater_than_g(tutte_polynomials[i], tutte_polynomials[j]) == 1:
                         directed_graph.add_edge(j, i)
 
-    print(directed_graph.nodes)         
+    print(directed_graph.nodes)
     print(directed_graph.edges)
 
     #asign the tutte_polynomials to the nodes
@@ -260,11 +284,17 @@ def generate_hasse_diagram(n, m, timer, tutte_polynomials):
 
     return directed_graph
 
+
 def main():
     array_entada = []
     if len(sys.argv) < 3:
         print("Usage: python index.py n m for more especific execution")
         array_entada.append([6,7])
+        array_entada.append([6,9])
+        array_entada.append([7,11])
+        array_entada.append([8,16])
+        array_entada.append([10,25])
+        array_entada.append([12,36])
     else:
         if len(sys.argv) % 2 != 1:
             print("error, odd number of enties read the readme file for more information")
@@ -279,4 +309,5 @@ def main():
         create_required_directories(array_entada[i][0], array_entada[i][1])
         ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], True)
 
-main()
+if __name__ == "__main__":
+    main()
