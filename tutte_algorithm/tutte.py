@@ -25,12 +25,12 @@ def call_tutte_bhkk(G):
     ret = ret[2:-1]
     return ret
 
-def latex_power(s,i):
+def sp_power(s,i):
     if i==0: return ""
     if i==1: return s
     return s+"**"+str(i)
 
-def to_latex(lines):
+def to_sp(lines):
     (i,j) = (0,0)
     P = []
     for line in lines.split('\\n'):
@@ -41,33 +41,32 @@ def to_latex(lines):
                 if i==0 and j==0:
                     P.append(coeff +"*"+ "1")
                 elif i==0:
-                    P.append(coeff +"*"+ latex_power('y',j))
+                    P.append(coeff +"*"+ sp_power('y',j))
                 elif j==0:
-                    P.append(coeff +"*"+ latex_power('x',i))
+                    P.append(coeff +"*"+ sp_power('x',i))
                 else:
-                    P.append(coeff +"*"+ latex_power('x',i) +"*"+ latex_power('y',j))
+                    P.append(coeff +"*"+ sp_power('x',i) +"*"+ sp_power('y',j))
 
             j += 1
         i += 1
         j = 0
     return " + ".join(P)
 
-def tutte_poly(G, output='lol'):
+def tutte_poly(G, output='sp'):
     """Return the Tutte polynomial of the given graph.
 
     arguments:
     G: a networkx graph. Simple, loopless, umweighted, undirected.
-    output: one of 'lol', 'raw', or 'tex'.
+    output: one of  'raw', or 'sp'.
 
-    By default, or if output == 'lol', returns a list of lists L of
-    coefficients, where L[i][j] is the coefficient of x^i y^j.  If
-    output == 'tex', returns the corresponding tex string. If output
-    == 'raw', returns the raw outpout of tutte_bhkk.
+    By default output == 'sp': returns the corresponding sp string 
+    with ** as ^ so it can be interpreted by sympy.
+    If output == 'raw', returns the raw outpout of tutte_bhkk.
     """
     lines = call_tutte_bhkk(G)
 
     if output == 'raw':
         return lines
-    if output == 'lol':
-        return to_latex(lines)
+    if output == 'sp':
+        return to_sp(lines)
 

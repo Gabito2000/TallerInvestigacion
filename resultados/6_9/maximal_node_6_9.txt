@@ -1,0 +1,1 @@
+Poly(x**5 + 4*x**4 + 10*x**3 + 9*x**2*y + 11*x**2 + 6*x*y**2 + 15*x*y + 5*x + y**4 + 5*y**3 + 9*y**2 + 5*y, x, y, domain='ZZ') with the filename Poly(x^5+4x^4+10x^3+9x^2y+11x^2+6xy^2+15xy+5x+y^4+5y^3+9y^2+5y,x,y,domain='ZZ')
