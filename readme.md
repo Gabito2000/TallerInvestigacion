@@ -35,7 +35,7 @@ recordar que el programa puede tardar tiempo en ejecutar, ya que es computaciona
 
 ## cómo compilar a cython 
 
-**python setup.py build_ext --inplace**
+**python3 setup.py build_ext --inplace**
 
 **python main.py**
 

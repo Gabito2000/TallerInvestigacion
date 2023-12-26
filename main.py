@@ -1,4 +1,3 @@
-# main.py
-import index_cython
+import index_cython as index
 
-index_cython.main()
+index.main()

@@ -67,7 +67,7 @@ def get_graph(n, m):
     # print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     return graphs
 
-def get_graphs(n, m):
+def get_graphs(n, m, print_status = True):
     command = 'nauty2_8_6/geng -c ' + str(n) + ' ' + str(m)
     graphs = []
     try:
@@ -90,8 +90,8 @@ def get_graphs(n, m):
 
     except Exception as e:
         print("Error:", e)
-
-    # print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
+    if print_status:
+        print ("Done generating graphs for n = " + str(n) + " and m = " + str(m), len(graphs))
     return graphs
 
 def tutte_polynomial_algorithm(graphs):
@@ -128,8 +128,7 @@ def is_h_greater_than_g(H, G):
     for r_key, r_value in R.items():
         if r_value < 0:
             return 0
-
-
+    
     return 1
 
 def tutte_polynomial_map_generate(n, m, tutte_polynomials, save_graphs):
@@ -151,9 +150,10 @@ def tutte_polynomial_map_generate(n, m, tutte_polynomials, save_graphs):
                     plt.close()
     return tutte_polynomial_map
 
-def get_tutte_polynomials(n, m, graphs, save_graphs):
+def get_tutte_polynomials(n, m, graphs, save_graphs, print_status = True):
     tutte_polynomials = tutte_polynomial_algorithm(graphs)
-    # print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
+    if print_status:
+        print ("Done generating tutte polynomials for n = " + str(n) + " and m = " + str(m))
     # create a map of tutte polynomials to their graphs
     tutte_polynomial_map = tutte_polynomial_map_generate(n, m, tutte_polynomials, save_graphs)
     tutte_polynomials = list(tutte_polynomial_map.keys())
@@ -171,7 +171,7 @@ def get_tutte_polynomials(n, m, graphs, save_graphs):
             fp.write('\n')
     return tutte_polynomials
 
-def get_max_polinome(tutte_polynomials, n, m, timer):
+def get_tutte_max(tutte_polynomials, n, m, timer):
     max_node = []
     
     #for h in range(len(tutte_polynomials)):}
@@ -213,25 +213,78 @@ def get_max_polinome(tutte_polynomials, n, m, timer):
 
     return max_node
 
-def ejecutar_algoritmo(n,m, getOnlyMax = False, save_graphs = False):
+def get_girth_max(n, m, graphs, print_status = True):
+    # print("getting the girth max")
+    girth_max = 0
+    girth_max_graph = []
+    for i in range(len(graphs)):
+        if nx.is_connected(graphs[i]):
+            girth = nx.girth(graphs[i])
+            if girth > girth_max:
+                girth_max = girth
+                girth_max_graph = [graphs[i]]
+            elif girth == girth_max:
+                girth_max_graph.append(graphs[i])
+                
+    calculate_tutte_polynomial = tutte_polynomial_algorithm(girth_max_graph)
+
+    calculate_tutte_polynomial = map(lambda x: x[1], calculate_tutte_polynomial)
+    calculate_tutte_polynomial = list(calculate_tutte_polynomial)
+
+    if print_status:
+        print ("Done generating girth max for n = " + str(n) + " and m = " + str(m))
+    with open('resultados/'+str(n) + '_' + str(m)+'/girth_max_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(girth_max) + ':')
+        fp.write(str(calculate_tutte_polynomial))
+
+    return calculate_tutte_polynomial
+
+def ejecutar_algoritmo(n,m, getOnlyMax = False, save_graphs = False, print_status = True):
     timer = time.time()
-    # if getOnlyMax == False:
-    #     print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
-    # else:
-    #     print ("Generating max node for n = " + str(n) + " and m = " + str(m))
+    if print_status:
+        if getOnlyMax == False:
+            print ("Generating diagrama de hasse for n = " + str(n) + " and m = " + str(m))
+        else:
+            print ("Generating max node for n = " + str(n) + " and m = " + str(m))
+
+    graphs = get_graphs(n, m, print_status)
+    tutte_polynomials = get_tutte_polynomials(n, m, graphs, save_graphs, print_status)
 
     if getOnlyMax:
-        graphs = get_graphs(n, m)
-        tutte_polynomials = get_tutte_polynomials(n, m, graphs, save_graphs)
-        get_max_polinome(tutte_polynomials, n, m, timer)
+        max_tutte_polynomial = get_tutte_max(tutte_polynomials, n, m, timer)
+        girth_experiment(n, m, print_status, graphs, max_tutte_polynomial)
+
     else:
-        graphs = get_graphs(n, m)
-        tutte_polynomials = get_tutte_polynomials(n, m, graphs, save_graphs)
         generate_hasse_diagram(n, m, timer, tutte_polynomials)
-    # if getOnlyMax == False:
-    #     print ("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
-    # else:
-    #     print ("Done generating max node for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+
+
+    if print_status:
+        if getOnlyMax == False:
+            print("Done generating diagrama de hasse for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+        else:
+            print("Done generating max node for n = " + str(n) + " and m = " + str(m), len(graphs), " time:" +str(time.time() - timer))
+
+def girth_experiment(n, m, print_status, graphs, max_tutte_polynomial):
+    max_girth_tutte_polynomial = get_girth_max(n, m, graphs, print_status)
+    max_node_with_max_girth = []
+    if type(max_tutte_polynomial) is not list:
+        max_tutte_polynomial = [max_tutte_polynomial]
+        
+    if type(max_girth_tutte_polynomial) is not list:
+        max_girth_tutte_polynomial = [max_girth_tutte_polynomial]
+
+    for i in range(len(max_girth_tutte_polynomial)):
+        for j in range(len(max_tutte_polynomial)):
+            if max_girth_tutte_polynomial[i] == max_tutte_polynomial[j]:
+                max_node_with_max_girth.append(max_girth_tutte_polynomial[i])
+                break
+    if len(max_node_with_max_girth) == 0:
+        print('THE MAX NODE WITH MAX GIRTH IS NOT IN THE MAX NODES')
+    else:
+        print("THE MAX NODE WITH MAX GIRTH IS:",max_node_with_max_girth, convert_to_file_name(str(max_node_with_max_girth)))
+        
+    with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_with_max_girth_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
+        fp.write(str(max_node_with_max_girth)+ " with the filename "+ convert_to_file_name(str(max_node_with_max_girth)))
 
 def generate_hasse_diagram(n, m, timer, tutte_polynomials):
     directed_graph = nx.DiGraph()
@@ -282,15 +335,18 @@ def generate_hasse_diagram(n, m, timer, tutte_polynomials):
 
     return directed_graph
 
-
 def main():
     array_entada = []
     if len(sys.argv) < 3:
         print("Usage: python index.py n m for more especific execution")
-        array_entada.append([6,7])
-        array_entada.append([6,9])
-        array_entada.append([7,11])
-        array_entada.append([8,16])
+        # array_entada.append([6,7])
+        # array_entada.append([6,9])
+        # array_entada.append([7,11])
+        # array_entada.append([8,16])
+        
+        for i in range(6, 9):
+            for j in range(i, i*2):
+                array_entada.append([i,j])
     else:
         if len(sys.argv) % 2 != 1:
             print("error, odd number of enties read the readme file for more information")
@@ -303,7 +359,7 @@ def main():
 
     for i in range(len(array_entada)):
         create_required_directories(array_entada[i][0], array_entada[i][1])
-        ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], True, False)
+        ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], True, True, False)
 
 if __name__ == "__main__":
     main()
