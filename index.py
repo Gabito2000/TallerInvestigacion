@@ -326,10 +326,9 @@ def generate_hasse_diagram(n, m, timer, tutte_polynomials):
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
     nx.draw(directed_graph, with_labels=True)
-    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph/' + 'directed_graph_Hasse' + str(n) + '_' + str(m) + '.png')
+    plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + 'directed_graph_Hasse_' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
-
     with open('resultados/'+str(n) + '_' + str(m)+'/directed_graph_Hasse' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(directed_graph.edges))
 
