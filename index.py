@@ -322,10 +322,14 @@ def generate_hasse_diagram(n, m, timer, tutte_polynomials):
     with open('resultados/'+str(n) + '_' + str(m)+'/maximal_node_' + str(n) + '_' + str(m) + '.txt', 'w') as fp:
         fp.write(str(max_node)+ " with the filename "+ convert_to_file_name(str(max_node)))
 
-    directed_graph = nx.relabel_nodes(directed_graph, lambda x: convert_to_file_name(str(directed_graph.nodes[x]['tutte_polynomial'])))
+    directed_graph = nx.relabel_nodes(directed_graph, lambda x: convert_to_file_name(str(directed_graph.nodes[x]['tutte_polynomial'].as_expr())))
+
+    directed_graph = nx.transitive_reduction(directed_graph)
+
+    pos = nx.planar_layout(directed_graph)
 
     # save tutte_polynomial_map, directed_graph, and tutte_polynomials to a file, and the graph to a png
-    nx.draw(directed_graph, with_labels=True)
+    nx.draw(directed_graph, pos, with_labels=True, font_size=8)
     plt.savefig('resultados/'+str(n) + '_' + str(m)+'/graph_image/' + 'directed_graph_Hasse_' + str(n) + '_' + str(m) + '.png')
     plt.clf()
     plt.close()
@@ -344,7 +348,7 @@ def main():
         # array_entada.append([8,16])
         
         for i in range(6, 9):
-            for j in range(i, i*2):
+            for j in range(i, i*2+1):
                 array_entada.append([i,j])
     else:
         if len(sys.argv) % 2 != 1:
@@ -358,7 +362,8 @@ def main():
 
     for i in range(len(array_entada)):
         create_required_directories(array_entada[i][0], array_entada[i][1])
-        ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], True, True, False)
+        print("executing the algorithm for n = " + str(array_entada[i][0]) + " and m = " + str(array_entada[i][1]))
+        ejecutar_algoritmo(array_entada[i][0], array_entada[i][1], False, True, False)
 
 if __name__ == "__main__":
     main()
